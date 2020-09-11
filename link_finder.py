@@ -10,9 +10,10 @@ class IncorrectMimeType(Exception):
 
 
 class LinkFinder:
+    def __init__(self, logger):
+        self.logger = logger
 
-    @staticmethod
-    def fetch_links(url):
+    def fetch_links(self, url):
         """
         fetch all out links from url if they are from
         :param url: str of url
@@ -29,7 +30,7 @@ class LinkFinder:
             soup = BeautifulSoup(content, "html.parser")
             tags = soup('a')
         except Exception as e:
-            print(sys.stderr, "ERROR: %s" % e)
+            self.logger.debug(sys.stderr, "ERROR: %s" % e)
             tags = []
         for tag in tags:
             href = tag.get("href")

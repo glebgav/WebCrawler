@@ -1,7 +1,18 @@
+import logging
 import os
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote_plus, unquote_plus
+
+import colorlog
 import requests
+from log_utils.helper import LogHelper
+
+utils_logger = logging.getLogger("WebCrawlerUtils")
+color_handler = LogHelper.generate_color_handler()
+formatter = colorlog.ColoredFormatter('{log_color}{name}: {levelname} {message}', style='{')
+color_handler.setFormatter(formatter)
+utils_logger.addHandler(color_handler)
+utils_logger.setLevel('INFO')
 
 
 def check_if_site_exists(site):
@@ -64,14 +75,14 @@ class CrawlerStorageManager:
     def create_project_folders(*args):
         for arg in args:
             if not os.path.exists(arg):
-                print('Creating directory ' + arg)
+                logger.info('Creating directory ' + arg)
                 os.makedirs(arg)
 
     @staticmethod
     def format_url_to_file_name(url: str):
-        return url.replace("/", "^").replace(":", "!")+".txt"
+        return quote_plus(url) + ".txt"
 
     @staticmethod
     def format_file_name_to_url(file_name: str):
-        return file_name.replace("^", "/").replace("!", ":").rstrip(".txt")
+        return unquote_plus(file_name).rstrip(".txt")
 

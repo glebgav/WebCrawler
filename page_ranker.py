@@ -1,11 +1,11 @@
 import threading
 from queue import Queue, Empty
-
 from utils import get_sub_domain_name
 
 
 class PageRanker:
-    def __init__(self, rank_queue: Queue):
+    def __init__(self, rank_queue: Queue, logger):
+        self.logger = logger
         self.rank_queue = rank_queue
         self.rank_output = set()
         self.done_crawling = threading.Event()
@@ -39,4 +39,4 @@ class PageRanker:
 
     def print_ranks(self):
         for page in self.rank_output:
-            print(page)
+            self.logger.info(page)

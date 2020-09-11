@@ -2,7 +2,6 @@ import concurrent
 import os
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
-
 from page import Page
 from spider import Spider
 from page_ranker import PageRanker
@@ -12,13 +11,9 @@ from utils import CrawlerStorageManager
 class WebCrawler:
     MAX_CRAWL_WORKERS = 12
     MAX_RANK_WORKERS = 3
-    CRAWL_QUEUE_FILE_NAME = "crawl_queue.pkl"
-    RANK_QUEUE_FILE_NAME = "crawl_queue.pkl"
-    SEEN_URLS_FILE_NAME = "crawl_queue.pkl"
-    PROCESSED_URLS_FILE_NAME = "crawl_queue.pkl"
-    RANK_OUT_PUT_FILE_NAME = "crawl_queue.pkl"
 
-    def __init__(self, root_url, domain_name: str, depth_limit: int):
+    def __init__(self, root_url, domain_name: str, depth_limit: int, logger):
+        self.logger = logger
         self.root_url = root_url
         self.domain_name = domain_name
         self.depth_limit = depth_limit
@@ -29,9 +24,9 @@ class WebCrawler:
         self.processed_urls = set()                   # all valid urls that have been processed
         self.spider_thread_futures = []               # futures of all spiders threads
 
-        self.ranker = PageRanker(self.rank_queue)
+        self.ranker = PageRanker(self.rank_queue, self.logger)
         self.spider = Spider(self.crawl_queue, self.seen_urls,
-                             self.processed_urls, self.rank_queue, self.depth_limit, self.domain_name)
+                             self.processed_urls, self.rank_queue, self.depth_limit, self.domain_name, self.logger)
         self.boot_with_root()
 
     def start(self):
@@ -44,13 +39,14 @@ class WebCrawler:
         self.start_spider()
         self.start_ranker()
 
-        concurrent.futures.wait(self.spider_thread_futures)
+        concurrent.futures.wait(self.spider_thread_futures)     # wait for spiders to finish
+        self.logger.info("Done crawling")
         self.ranker.done_crawling.set()
 
         self.ranker.print_ranks()
 
     def start_spider(self):
-        print("Starting to crawl..")
+        self.logger.info("Starting to crawl..")
         executor = ThreadPoolExecutor(WebCrawler.MAX_CRAWL_WORKERS)
         for _ in range(WebCrawler.MAX_CRAWL_WORKERS):
             self.spider_thread_futures.append(executor.submit(self.spider.work))
@@ -67,7 +63,8 @@ class WebCrawler:
             insert initial root url to crawl queue , if backup files exist , process them and
             add to appropriate queue
         """
-        CrawlerStorageManager.create_project_folders(self.domain_name, os.path.join(self.domain_name, Page.PAGES_DIR_NAME))
+        CrawlerStorageManager.create_project_folders(self.domain_name, os.path.join(self.domain_name,
+                                                                                    Page.PAGES_DIR_NAME))
         self.crawl_queue.put((self.root_url, 0))
         self.restore_state_from_disk()
 
@@ -79,7 +76,7 @@ class WebCrawler:
         """
         path = os.path.join(self.domain_name, Page.PAGES_DIR_NAME)
         if len(os.listdir(path)) > 0:
-            print("restoring data of previous session...")
+            self.logger.info("restoring data of previous session...")
             page_count = 0
             for subdir, dirs, files in os.walk(path):
                 for file in files:

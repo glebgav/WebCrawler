@@ -1,11 +1,18 @@
+import logging
 import optparse
 import sys
-
+import colorlog
+from log_utils.helper import LogHelper
 from utils import get_domain_name, add_valid_protocol_prefix
 from web_crawler import WebCrawler
 
-
-INPUT_DEPTH_LIMIT = 40
+logger = logging.getLogger("WebCrawler")
+color_handler = LogHelper.generate_color_handler()
+formatter = colorlog.ColoredFormatter('{log_color}{name}: {levelname} {message}', style='{')
+color_handler.setFormatter(formatter)
+logger.addHandler(color_handler)
+logger.setLevel('DEBUG')
+INPUT_DEPTH_LIMIT = 8
 
 
 def get_args():
@@ -21,16 +28,16 @@ def get_args():
                       help="get root url")
 
     parser.add_option("-d", "--depth",
-                      action="store", type="int", default=5, dest="depth_limit",
+                      action="store", type="int", default=INPUT_DEPTH_LIMIT, dest="depth_limit",
                       help="Maximum depth to traverse")
 
-    opts, args = parser.parse_args()
+    opts, _ = parser.parse_args()
 
     if not opts.url:
         parser.print_help(sys.stderr)
         raise SystemExit(1)
 
-    return opts, args
+    return opts, _
 
 
 def web_crawler_main():
@@ -41,14 +48,14 @@ def web_crawler_main():
 
     if url and depth_limit:
         domain_name = get_domain_name(url)
-        web_crawler = WebCrawler(url, domain_name, depth_limit)
+        web_crawler = WebCrawler(url, domain_name, depth_limit, logger)
         web_crawler.start()
 
     else:
         if not url:
-            print("invalid page address")
+            logger.error("invalid page address")
         if not depth_limit:
-            print("invalid depth limit")
+            logger.error("invalid depth limit")
         raise SystemExit(1)
 
 

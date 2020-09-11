@@ -6,7 +6,7 @@ class Page:
     PAGES_DIR_NAME = "pages"
     count = 0
 
-    def __init__(self, url, root_url, out_links=None, depth=0, rank=0, valid_mime=True):
+    def __init__(self, root_url, url, out_links=None, depth=0, rank=0, valid_mime=True):
         self.root_url = root_url
         self.url = url
         self.out_links = out_links
@@ -41,6 +41,7 @@ class Page:
     def restore_form_json_file(path):
         with open(path, 'r') as f:
             return Page.from_json(json.load(f))
+
 
 
 
