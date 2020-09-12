@@ -11,8 +11,8 @@ from utils import CrawlerStorageManager
 class WebCrawler:
     """
     main class of the web crawler.
-    this class responsible of orchestration of all
-    workers and flows in web crawler app :
+    this class responsible for the orchestration of all
+    workers and flows in web crawler app
     """
     MAX_RANK_WORKERS = 3
     MAX_CRAWL_WORKERS = 12

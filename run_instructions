@@ -1,0 +1,9 @@
+run main.py with the following arguments:
+-u <url_name> -d <depth_limit> -t <time_out_value>
+
+* -d and -t are optional
+* to see progress of every crawled page , in main , change DEFAULT_LOG_LEVEL to 'DEBUG'
+*run with python interpreter that has all the dependencies
+that are mentioned in  dependencies.txt
+
+

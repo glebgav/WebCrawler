@@ -6,15 +6,21 @@ from log_utils.helper import LogHelper
 from utils import add_valid_protocol_prefix, get_sub_domain_name
 from web_crawler import WebCrawler
 
-INPUT_DEPTH_LIMIT = 8
+DEFAULT__DEPTH_LIMIT = 2
 DEFAULT_TIME_OUT = 30
+DEFAULT_LOG_LEVEL = 'INFO'
+
+"""
+multi threaded Web Crawler app , with simple rank capabilities.
+
+"""
 
 
 def get_args():
     """get_args() -> opts, args
 
-    Parse any command-line options given returning both
-    the parsed options and arguments.
+    Parse any command-line options given returning
+    the parsed options.
     """
     parser = optparse.OptionParser()
 
@@ -23,7 +29,7 @@ def get_args():
                       help="get root url")
 
     parser.add_option("-d", "--depth",
-                      action="store", type="int", default=INPUT_DEPTH_LIMIT, dest="depth_limit",
+                      action="store", type="int", default=DEFAULT__DEPTH_LIMIT, dest="depth_limit",
                       help="Maximum depth to traverse")
 
     parser.add_option("-t", "--time_out",
@@ -45,16 +51,19 @@ def get_logger():
     formatter = colorlog.ColoredFormatter('{log_color}{name}: {levelname} {message}', style='{')
     color_handler.setFormatter(formatter)
     logger.addHandler(color_handler)
-    logger.setLevel('DEBUG')
+    logger.setLevel(DEFAULT_LOG_LEVEL)
     return logger
 
 
 def web_crawler_main():
+    """
+        check user input and start WebCrawler
+    """
     opts, args = get_args()
     logger = get_logger()
 
     url = add_valid_protocol_prefix(opts.url)
-    depth_limit = opts.depth_limit if 0 < opts.depth_limit <= INPUT_DEPTH_LIMIT else None
+    depth_limit = opts.depth_limit if 0 < opts.depth_limit <= DEFAULT__DEPTH_LIMIT else None
     time_out = opts.time_out if 0 < opts.time_out else None
 
     if not url or not depth_limit or not time_out:
