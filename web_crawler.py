@@ -64,8 +64,9 @@ class WebCrawler:
             insert initial root url to crawl queue , if backup files exist , process them and
             add to appropriate queue
         """
-        CrawlerStorageManager.create_project_folders(self.domain_name, os.path.join(self.domain_name,
-                                                                                    Page.PAGES_DIR_NAME))
+        CrawlerStorageManager.create_project_folders(self.domain_name,
+                                                     os.path.join(self.domain_name,
+                                                                  CrawlerStorageManager.BACKUP_PAGES_DIR_NAME))
         self.crawl_queue.put((self.root_url, 0))
         self.restore_state_from_disk()
 
@@ -75,7 +76,7 @@ class WebCrawler:
                 1)restore queues and sets from previous run
                 2)update page counter
         """
-        path = os.path.join(self.domain_name, Page.PAGES_DIR_NAME)
+        path = os.path.join(self.domain_name, CrawlerStorageManager.BACKUP_PAGES_DIR_NAME)
         if len(os.listdir(path)) > 0:
             self.logger.info("restoring data from previous session...")
             page_count = 0
@@ -86,7 +87,7 @@ class WebCrawler:
                     page = Page.restore_form_json_file(abs_path)
                     if page:
                         self._add_page_to_queues_and_sets(page)
-            Page.count = page_count
+            Page.backup_page_counter = page_count
 
     def _add_page_to_queues_and_sets(self, page: Page):
         """

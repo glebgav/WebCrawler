@@ -6,8 +6,15 @@ from utils import CrawlerStorageManager
 
 
 class Spider:
-    seen_urls_lock = threading.RLock()
-    processed_urls_lock = threading.RLock()
+    """
+    this class is responsible for:
+    1) get a url from queue
+    2) crawl it for links and save to storage
+    3) put all links to queue
+
+    """
+    seen_urls_lock = threading.RLock()          # lock for seen_urls set
+    processed_urls_lock = threading.RLock()     # lock for processed_urls set
 
     def __init__(self, crawl_queue: Queue, seen_urls: set, processed_urls: set, rank_queue: Queue
                  , depth_limit, domain_name, crawl_queue_time_out: int, logger):
@@ -22,6 +29,14 @@ class Spider:
         self.crawl_queue_time_out = crawl_queue_time_out
 
     def work(self):
+        """
+        main method of class.
+        actions:
+            1) get a url from queue
+            2) crawl it for links and save to storage
+            3) put all links to queue
+        will stop when queue is empty for a given time out period (to prevent blocked threads)
+        """
         while True:
             url, depth = self.crawl_queue.get(timeout=self.crawl_queue_time_out)
             self.crawl_queue.task_done()

@@ -2,7 +2,6 @@ import logging
 import os
 import re
 from urllib.parse import urlparse, quote_plus, unquote_plus
-
 import colorlog
 import requests
 from log_utils.helper import LogHelper
@@ -15,7 +14,11 @@ utils_logger.addHandler(color_handler)
 utils_logger.setLevel('INFO')
 
 
-def check_if_site_exists(site):
+def check_if_site_exists(site: str) -> bool:
+    """
+        check connection for a given site address
+        return True if OK status (2XX)
+    """
     try:
         request = requests.get(site)
     except requests.exceptions.ConnectionError:
@@ -47,7 +50,7 @@ def add_valid_protocol_prefix(url: str):
 def get_domain_name(url: str) -> str:
     """
     :param url: string representation of valid url
-    :return:  sub domain name (example.com)
+    :return:  sub domain name (google.com)
     """
     try:
         results = get_sub_domain_name(url).split('.')
@@ -59,7 +62,7 @@ def get_domain_name(url: str) -> str:
 def get_sub_domain_name(url: str) -> str:
     """
     :param url: string representation of valid url
-    :return:  sub domain name (name.example.com)
+    :return:  sub domain name (il.google.com)
     """
     try:
         return urlparse(url).netloc
@@ -68,6 +71,18 @@ def get_sub_domain_name(url: str) -> str:
 
 
 class CrawlerStorageManager:
+    """
+    this class is responsible for saving all valid crawled urls in txt format.
+    the directory structure is the following:
+    1) directory for root url
+    2)for every crawled url a text file is created(all non supported characters are replaced with
+    urllib.parse.quote_plus method)
+    3)inside every url text file , all out links are saved
+
+    for recreation of url name use urllib.parse.unquote_plus
+    """
+
+    BACKUP_PAGES_DIR_NAME = "backup_pages"
 
     @staticmethod
     def create_file_from_page(page):
