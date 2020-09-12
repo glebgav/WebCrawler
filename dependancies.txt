@@ -1,3 +1,5 @@
 requests      2.24.0
 beautifulsoup   4 4.9.1
-
+log-utils      0.3.4
+colorama       0.4.3
+colorlog       4.2.1

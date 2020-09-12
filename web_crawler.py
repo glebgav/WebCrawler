@@ -9,10 +9,10 @@ from utils import CrawlerStorageManager
 
 
 class WebCrawler:
-    MAX_CRAWL_WORKERS = 12
     MAX_RANK_WORKERS = 3
+    MAX_CRAWL_WORKERS = 12
 
-    def __init__(self, root_url, domain_name: str, depth_limit: int, logger):
+    def __init__(self, root_url, domain_name: str, depth_limit: int, crawl_queue_time_out: int, logger):
         self.logger = logger
         self.root_url = root_url
         self.domain_name = domain_name
@@ -26,7 +26,8 @@ class WebCrawler:
 
         self.ranker = PageRanker(self.rank_queue, self.logger)
         self.spider = Spider(self.crawl_queue, self.seen_urls,
-                             self.processed_urls, self.rank_queue, self.depth_limit, self.domain_name, self.logger)
+                             self.processed_urls, self.rank_queue, self.depth_limit, self.domain_name,
+                             crawl_queue_time_out, self.logger)
         self.boot_with_root()
 
     def start(self):
@@ -76,13 +77,15 @@ class WebCrawler:
         """
         path = os.path.join(self.domain_name, Page.PAGES_DIR_NAME)
         if len(os.listdir(path)) > 0:
-            self.logger.info("restoring data of previous session...")
+            self.logger.info("restoring data from previous session...")
             page_count = 0
             for subdir, dirs, files in os.walk(path):
                 for file in files:
                     page_count += 1
                     abs_path = os.path.join(subdir, file)
-                    self._add_page_to_queues_and_sets(Page.restore_form_json_file(abs_path))
+                    page = Page.restore_form_json_file(abs_path)
+                    if page:
+                        self._add_page_to_queues_and_sets(page)
             Page.count = page_count
 
     def _add_page_to_queues_and_sets(self, page: Page):
@@ -95,12 +98,13 @@ class WebCrawler:
                 3.2)add to processed set and rank queue
         :param page: Page object that was restored from disk
         """
-        if not page.url == self.root_url:
+        if not page.url == self.root_url and page.url not in self.seen_urls:
             self.seen_urls.add(page.url)
             if page.valid_mime:
                 if page.depth < self.depth_limit:
                     for link in page.out_links:
-                        self.crawl_queue.put((link, page.depth+1))
+                        if not link == self.root_url:
+                            self.crawl_queue.put((link, page.depth+1))
                 self.processed_urls.add(page.url)
                 self.rank_queue.put(page)
 

@@ -3,7 +3,7 @@ import os
 
 
 class Page:
-    PAGES_DIR_NAME = "pages"
+    PAGES_DIR_NAME = "backup"
     count = 0
 
     def __init__(self, root_url, url, out_links=None, depth=0, rank=0, valid_mime=True):
@@ -22,7 +22,7 @@ class Page:
 
     @staticmethod
     def _get_json_file_name():
-        res = "{}.json".format(Page.count)
+        res = f"{Page.count}.json"
         Page.count += 1
         return res
 
@@ -39,8 +39,12 @@ class Page:
 
     @staticmethod
     def restore_form_json_file(path):
-        with open(path, 'r') as f:
-            return Page.from_json(json.load(f))
+        try:
+            with open(path, 'r') as f:
+                return Page.from_json(json.load(f))
+        except:
+            return None
+
 
 
 

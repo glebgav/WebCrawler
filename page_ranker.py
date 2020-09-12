@@ -35,8 +35,9 @@ class PageRanker:
         if same_domain == 0 and different_domain == 0:
             page.rank = 0
         else:
-            page.rank = float("{:.2f}".format(same_domain/(different_domain + same_domain)))
+            page.rank = float(f"{(same_domain/(different_domain + same_domain)):.3f}")
 
     def print_ranks(self):
+        self.logger.info("Ranked Pages: \n\t\t\t\turl   depth   ratio")
         for page in self.rank_output:
             self.logger.info(page)

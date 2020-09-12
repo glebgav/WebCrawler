@@ -10,10 +10,10 @@ class IncorrectMimeType(Exception):
 
 
 class LinkFinder:
-    def __init__(self, logger):
-        self.logger = logger
+    VALID_MIME_TYPE = "text/html"
 
-    def fetch_links(self, url):
+    @staticmethod
+    def fetch_links(url):
         """
         fetch all out links from url if they are from
         :param url: str of url
@@ -22,16 +22,18 @@ class LinkFinder:
         out_links = set()
         content = ''
         try:
-            response = urlopen(url)
-            if 'text/html' not in response.getheader('Content-Type'):
-                raise IncorrectMimeType
-            html_bytes = response.read()
-            content = html_bytes.decode("utf-8")
+            with urlopen(url) as response:
+                if response.info().get_content_type() != LinkFinder.VALID_MIME_TYPE:
+                    raise IncorrectMimeType
+                html_bytes = response.read()
+                content = html_bytes.decode("utf-8")
+
             soup = BeautifulSoup(content, "html.parser")
             tags = soup('a')
+        except IncorrectMimeType:
+            raise IncorrectMimeType
         except Exception as e:
-            self.logger.debug(sys.stderr, "ERROR: %s" % e)
-            tags = []
+            raise e
         for tag in tags:
             href = tag.get("href")
             if href:

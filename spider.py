@@ -10,7 +10,7 @@ class Spider:
     processed_urls_lock = threading.RLock()
 
     def __init__(self, crawl_queue: Queue, seen_urls: set, processed_urls: set, rank_queue: Queue
-                 , depth_limit, domain_name, logger):
+                 , depth_limit, domain_name, crawl_queue_time_out: int, logger):
         self.logger = logger
         self.crawl_queue = crawl_queue
         self.seen_urls = seen_urls
@@ -18,12 +18,12 @@ class Spider:
         self.rank_queue = rank_queue
         self.depth_limit = depth_limit
         self.domain_name = domain_name
-
-        self.link_finder = LinkFinder(self.logger)
+        self.link_finder = LinkFinder()
+        self.crawl_queue_time_out = crawl_queue_time_out
 
     def work(self):
         while True:
-            url, depth = self.crawl_queue.get(timeout=30)
+            url, depth = self.crawl_queue.get(timeout=self.crawl_queue_time_out)
             self.crawl_queue.task_done()
             try:
                 if depth <= self.depth_limit:
@@ -42,9 +42,7 @@ class Spider:
         if links and depth < self.depth_limit:
             for link in links:
                 with Spider.seen_urls_lock:
-                    if link in self.seen_urls:
-                        continue
-                    else:
+                    if link not in self.seen_urls:
                         self.crawl_queue.put((link, depth + 1))
 
     def _add_page_to_rank_queue(self, page, url):
@@ -59,20 +57,26 @@ class Spider:
             save it to disk and return set of out links and the Page object
         :rtype: Page, set()
         """
-        self.logger.debug("crawling {} in depth {}".format(url, depth))
+        self.logger.debug(f"crawling {url} in depth {depth}")
         try:
-
             links = self.link_finder.fetch_links(url)
             page = Page(domain_name, url, links, depth)
             page.save_to_json_file()
-            CrawlerStorageManager.page_to_file(page)
+            CrawlerStorageManager.create_file_from_page(page)
             if links:
                 return page, links
+            return None, None
         except IncorrectMimeType:
-            self.logger.debug("incorrect mime type")
+            self.logger.debug("ERROR: incorrect mime type")
             page = Page(domain_name, url, [], depth, valid_mime=False)
             page.save_to_json_file()
-        return None, None
+            return None, None
+        except Exception as e:
+            self.logger.debug(f"ERROR: {e}")
+            return None, None
+
+
+
 
 
 

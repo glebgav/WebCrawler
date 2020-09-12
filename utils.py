@@ -20,30 +20,35 @@ def check_if_site_exists(site):
         request = requests.get(site)
     except requests.exceptions.ConnectionError:
         return False
-    if request.status_code == 200:
+    if request.ok:
         return True
     return False
 
 
 def add_valid_protocol_prefix(url: str):
     """
-        add https or http prefix to valid url , default return will be https
-
+    args:
+        url: string of url
+    :return
+        url with https or http prefix (if valid) , default return will be https
     """
     if not re.match('(?:http|https)://', url):
 
-        http = 'http://{}'.format(url)
-        https = 'https://{}'.format(url)
-        if check_if_site_exists(https):
-            return https
-        elif check_if_site_exists(http):
-            return http
+        http_prefixed_url = 'http://{}'.format(url)
+        https_prefixed_url = 'https://{}'.format(url)
+        if check_if_site_exists(https_prefixed_url):
+            return https_prefixed_url
+        elif check_if_site_exists(http_prefixed_url):
+            return http_prefixed_url
         return None
     return url
 
 
-# Get domain name (example.com)
-def get_domain_name(url):
+def get_domain_name(url: str) -> str:
+    """
+    :param url: string representation of valid url
+    :return:  sub domain name (example.com)
+    """
     try:
         results = get_sub_domain_name(url).split('.')
         return results[-2] + '.' + results[-1]
@@ -51,8 +56,11 @@ def get_domain_name(url):
         return ''
 
 
-# Get sub domain name (name.example.com)
-def get_sub_domain_name(url):
+def get_sub_domain_name(url: str) -> str:
+    """
+    :param url: string representation of valid url
+    :return:  sub domain name (name.example.com)
+    """
     try:
         return urlparse(url).netloc
     except:
@@ -62,7 +70,7 @@ def get_sub_domain_name(url):
 class CrawlerStorageManager:
 
     @staticmethod
-    def page_to_file(page):
+    def create_file_from_page(page):
         file_name = CrawlerStorageManager.format_url_to_file_name(page.url)
         file_path = os.path.join(page.root_url, file_name)
 
@@ -75,7 +83,7 @@ class CrawlerStorageManager:
     def create_project_folders(*args):
         for arg in args:
             if not os.path.exists(arg):
-                logger.info('Creating directory ' + arg)
+                utils_logger.info('Creating directory ' + arg)
                 os.makedirs(arg)
 
     @staticmethod
