@@ -47,48 +47,69 @@ class Spider:
                     if not seen_already:
                         page, links = self.crawl_page(url, depth, self.domain_name)
                         self._add_links_to_crawl_queue(links, depth)
-                        self._add_page_to_rank_queue(page, url)
+                        self._add_page_to_rank_queue(page)
+                        self._add_page_to_storage(page)
                     with Spider.seen_urls_lock:
                         self.seen_urls.add(url)
             except Exception as e:
                 self.logger.debug(e)
 
     def _add_links_to_crawl_queue(self, links, depth):
+        """
+        add link to crawl queue if current url depth not equal to the limit
+        and the link was not visited before
+        :param links: list of links
+        :param depth: current url depth
+        """
         if links and depth < self.depth_limit:
             for link in links:
                 with Spider.seen_urls_lock:
                     if link not in self.seen_urls:
                         self.crawl_queue.put((link, depth + 1))
 
-    def _add_page_to_rank_queue(self, page, url):
+    def _add_page_to_rank_queue(self, page):
+        """
+        add page to rank queue if it was not processed before
+        """
         with Spider.processed_urls_lock:
-            if page and url not in self.processed_urls:
+            if page and page.url not in self.processed_urls:
                 self.rank_queue.put(page)
-                self.processed_urls.add(url)
+                self.processed_urls.add(page.url)
 
     def crawl_page(self, url: str, depth: int, domain_name: str):
         """
             crawl a given url (if it's valid)
-            save it to disk and return set of out links and the Page object
+            and return set of out links and the Page object
+            in case of IncorrectMimeType return valid_mime=False Page
         :rtype: Page, set()
         """
         self.logger.debug(f"crawling {url} in depth {depth}")
         try:
             links = self.link_finder.fetch_links(url)
             page = Page(domain_name, url, links, depth)
-            page.save_to_json_file()
-            CrawlerStorageManager.create_file_from_page(page)
             if links:
                 return page, links
             return None, None
         except IncorrectMimeType:
             self.logger.debug("ERROR: incorrect mime type")
             page = Page(domain_name, url, [], depth, valid_mime=False)
-            page.save_to_json_file()
-            return None, None
+            return page, None
         except Exception as e:
             self.logger.debug(f"ERROR: {e}")
             return None, None
+
+    @staticmethod
+    def _add_page_to_storage(page: Page):
+        """
+        add page to backup directory for quick recovery from failure
+        store page as text file in storage if valid mime
+        :param page: crawled page
+        """
+        if page:
+            if page.valid_mime:
+                CrawlerStorageManager.create_file_from_page(page)
+            page.save_to_json_file()
+
 
 
 

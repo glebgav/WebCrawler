@@ -9,6 +9,11 @@ from utils import CrawlerStorageManager
 
 
 class WebCrawler:
+    """
+    main class of the web crawler.
+    this class responsible of orchestration of all
+    workers and flows in web crawler app :
+    """
     MAX_RANK_WORKERS = 3
     MAX_CRAWL_WORKERS = 12
 
@@ -62,7 +67,7 @@ class WebCrawler:
     def boot_with_root(self):
         """
             insert initial root url to crawl queue , if backup files exist , process them and
-            add to appropriate queue
+            add to appropriate queues and sets
         """
         CrawlerStorageManager.create_project_folders(self.domain_name,
                                                      os.path.join(self.domain_name,
