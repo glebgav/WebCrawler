@@ -90,7 +90,7 @@ class CrawlerStorageManager:
         file_path = os.path.join(page.root_url, file_name)
 
         if not os.path.exists(file_path):
-            with open(file_path, "w") as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 for link in sorted(page.out_links):
                     f.write(link + "\n")
 

@@ -25,8 +25,8 @@ class LinkFinder:
                 if response.info().get_content_type() != LinkFinder.VALID_MIME_TYPE:
                     raise IncorrectMimeType
                 html_bytes = response.read()
-                content = html_bytes.decode("utf-8")
 
+            content = html_bytes.decode("utf-8")
             soup = BeautifulSoup(content, "html.parser")
             tags = soup('a')
         except IncorrectMimeType:
